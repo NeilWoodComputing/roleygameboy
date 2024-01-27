@@ -4,7 +4,7 @@
 #define roley_TILE_H 8
 #define roley_WIDTH 8
 #define roley_HEIGHT 16
-#define roley_TILE_COUNT 18
+#define roley_TILE_COUNT 20
 #define roley_PALETTE_COUNT 1
 #define roley_COLORS_PER_PALETTE 4
 #define roley_TOTAL_COLORS 4
