@@ -5,9 +5,6 @@
 #include <stdbool.h>
 #include <gb/metasprites.h>
 
-
-
-
 uint8_t playerX=80, playerY=135, nextPlayerX =0, nextPlayerY =0;
 uint8_t joypadCurrent=0, joypadPrevious=0;
 uint8_t roleyXAnimationStage = 1;
