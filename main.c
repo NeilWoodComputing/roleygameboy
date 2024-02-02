@@ -5,14 +5,17 @@
 #include <stdbool.h>
 #include <gb/metasprites.h>
 
-
 uint8_t playerX=80, playerY=135, nextPlayerX =0, nextPlayerY =0;
+uint8_t playerWidth = 20;
+
 uint8_t joypadCurrent=0, joypadPrevious=0;
 uint8_t roleyXAnimationStage = 1;
 uint8_t animationDelay = 4;
 uint8_t animationXDelayTimeout = 0;
 bool movementDirectionForward = false;
 uint8_t movePixels = 2;
+//uint8_t moveDelay = 3;
+
 
 typedef struct collisionObject{
    int positionX;
@@ -22,20 +25,25 @@ typedef struct collisionObject{
 } collisionObjects;
 
 bool checkAnimationTimeout(bool);
-//bool OnAPlatform(int, int);
 void setUpGame(void);
 void getPlayerInput(int, int);
-void setMetaSprite(int);
+void setMetaSprite(int, metasprite_t[]);
 
 bool isColliding(collisionObjects[], int, int);
 
+uint8_t fixedGroundLevel = 135;
 uint8_t groundLevel = 135;
+
+bool onPlatform = false;
+uint8_t currentPlatformHeight = 0;
+
 bool playerIsJumping = false;
 uint8_t playerYVelocity = 0;
 uint8_t startingSprite = 0;
 uint8_t jumpHeight = 13;
 
-int platformPositionX = 1000;
+int platformPositionX = -175;
+int platformPositionXDefault = -255;
 
 // try to understand this badboy
 // dy & dx relative to center point of metasprite.
@@ -45,14 +53,13 @@ const metasprite_t platfrom_metasprite[] = {
     METASPR_TERM
 };
 
-
 const collisionObjects platform_objects[] = {
-     {.positionX=100, .positionY=120, .height=30, .width =130},
-     {.positionX=120, .positionY=100, .height=30, .width =130},
-     {.positionX=140, .positionY=80, .height=30, .width =130},
-     {.positionX=200, .positionY=120, .height=30, .width =130},
-     {.positionX=220, .positionY=100, .height=30, .width =130},
-     {.positionX=240, .positionY=80, .height=30, .width =130}
+     {.positionX=100, .positionY=120, .height=10, .width =20},
+     {.positionX=120, .positionY=100, .height=10, .width =20},
+     {.positionX=140, .positionY=80, .height=10, .width =20},
+     {.positionX=200, .positionY=120, .height=10, .width =20},
+     {.positionX=220, .positionY=100, .height=10, .width =20},
+     {.positionX=240, .positionY=80, .height=10, .width =0}
 };
 
 void main(void)
@@ -121,6 +128,7 @@ void getPlayerInput(int nextPlayerX, int nextPlayerY) {
                 else roleyXAnimationStage--;
             }
         }
+        
 
 
         startingSprite = 2;
@@ -133,16 +141,14 @@ void getPlayerInput(int nextPlayerX, int nextPlayerY) {
                 //delay();
         };
 
-        setMetaSprite(0);
-        setMetaSprite(1);
-        setMetaSprite(2);
-        setMetaSprite(3);
-        setMetaSprite(4);
-        setMetaSprite(5);
+        setMetaSprite(0, platfrom_metasprite);
+        setMetaSprite(1, platfrom_metasprite);
+        setMetaSprite(2, platfrom_metasprite);
+        setMetaSprite(3, platfrom_metasprite);
+        setMetaSprite(4, platfrom_metasprite);
+        setMetaSprite(5, platfrom_metasprite);
 
        // hide_sprites_range(startingSprite, 40);
-
-
 
         //groundLevel = playerY;
 
@@ -162,11 +168,26 @@ void getPlayerInput(int nextPlayerX, int nextPlayerY) {
             playerYVelocity = jumpHeight;
         }
 
+        if(joypadCurrent & J_B){
+            movePixels = 4;
+        }
+        else{
+            movePixels = 2;
+        }
+
+
+        //TODO figure this out
         if (isColliding(platform_objects, nextPlayerX, nextPlayerY)){
             //playerY = 20;
-            playerX = 200;
-            playerYVelocity = 0;
-            playerIsJumping = false;
+            //playerX = 200;
+            //playerYVelocity = 0;
+            //playerIsJumping = false;
+        }
+        else {
+            groundLevel = fixedGroundLevel;
+            //playerYVelocity = jumpHeight;
+            currentPlatformHeight = fixedGroundLevel;
+           // playerIsJumping = true;
         }
 
         //update jump position
@@ -174,10 +195,22 @@ void getPlayerInput(int nextPlayerX, int nextPlayerY) {
             playerY = playerY-playerYVelocity;
         }
 
+        // if (
+        //     playerIsJumping && playerY == groundLevel && !onPlatform ||
+        //     playerIsJumping && onPlatform && playerY == currentPlatformHeight
+        // ) {
+        //     playerY = playerY-playerYVelocity;
+        // }
+
         //Update jump velocity
-        if(playerIsJumping) {
-            if (playerY < groundLevel)
+        //if(playerIsJumping) {
+            if (
+                playerY < groundLevel 
+                //&& !onPlatform ||
+               // onPlatform && playerY < currentPlatformHeight
+            )
             {
+                //playerIsJumping = true;
                 playerYVelocity--;
             }
             else {
@@ -186,18 +219,23 @@ void getPlayerInput(int nextPlayerX, int nextPlayerY) {
                 playerYVelocity = 0;
                 playerIsJumping = false;
             }
+        //}
+
+        if (platformPositionX < platformPositionXDefault ){
+            platformPositionX = 0;
+        }
+        else if ( platformPositionX > 0){
+            platformPositionX = platformPositionXDefault;
         }
 }
 
-
-
-void setMetaSprite(int Index) {
+void setMetaSprite(int index, metasprite_t metasprite[]) {
      startingSprite += move_metasprite(
-        platfrom_metasprite,
+        metasprite,
         0,
         startingSprite,
-        platformPositionX+platform_objects[Index].positionX,
-        platform_objects[Index].positionY
+        platformPositionX+platform_objects[index].positionX,
+        platform_objects[index].positionY
     );
 }
 
@@ -234,17 +272,49 @@ void setUpGame(void){
 }
 
 bool isColliding(collisionObjects collision_Objects[], int posX, int posY){
-        for (int i =0; i < sizeof(collision_Objects); i++)
-        {
-            if (
-                posX > collision_Objects[i].positionX &&
-                posX < collision_Objects[i].positionX + collision_Objects[i].width &&
-                posY > collision_Objects[i].positionY -collision_Objects[i].height
-              )
-              return true;
-        };
 
-    return false;
+    //collisionObjects all_coliding_Objects[];
+
+    bool isCollidingTemp = false;
+
+    for (int i =0; i < sizeof(collision_Objects); i++)
+    {
+        if (
+            (
+                posX > platformPositionX+collision_Objects[i].positionX-8 &&
+                posX <  platformPositionX+collision_Objects[i].positionX + collision_Objects[i].width-8
+            ) 
+            ||
+            (
+                (posX+playerWidth) > platformPositionX+collision_Objects[i].positionX-8 &&
+                (posX+playerWidth) <  platformPositionX+collision_Objects[i].positionX + collision_Objects[i].width-8    
+            ) 
+            &&
+                posY <= collision_Objects[i].positionY-16 &&
+                posY >= collision_Objects[i].positionY-(16+collision_Objects[i].height)
+            ){
+
+                isCollidingTemp= true;
+                if (collision_Objects[i].positionY-16 < currentPlatformHeight){
+                    currentPlatformHeight = collision_Objects[i].positionY-(collision_Objects[i].height+16);            
+                }
+
+              //  all_coliding_Objects[sizeof(all_coliding_Objects)] = collision_Objects[i];
+                
+                //all_coliding_Objects = collision_Objects[i];
+                //return true;
+            }    
+
+             //groundLevel = tempGroundLevel;
+  
+    };
+
+     onPlatform = isCollidingTemp;
+    // if (onPlatform == false){
+    //     currentPlatformHeight = fixedGroundLevel;
+    // }
+
+    return isCollidingTemp;
 }
 
 bool checkAnimationTimeout(bool movingForward)
@@ -276,3 +346,4 @@ bool checkAnimationTimeout(bool movingForward)
     animationXDelayTimeout++;
     return false;
 }
+

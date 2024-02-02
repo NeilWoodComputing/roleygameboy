@@ -13,6 +13,10 @@
 #define roley_PIVOT_W 8
 #define roley_PIVOT_H 16
 
+extern unsigned char black_tile[];
+extern unsigned char arrow_tile[];
+extern unsigned char char_sprites[];
+extern unsigned char dia_wnd_tilemap[];
 
 /* Bank of tiles. */
 #define RoleyBank 0
